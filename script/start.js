@@ -3,12 +3,19 @@ const utils = require('./lib/utils');
 const electronPath = utils.getAbsoluteElectronExec();
 
 const child = cp.spawn(electronPath, process.argv.slice(2), { stdio: 'inherit' });
-child.on('close', (code) => process.exit(code));
+let childClosed = false;
+child.on('close', (code) => {
+  childClosed = true;
+  process.exit(code);
+});
 
 const handleTerminationSignal = (signal) =>
   process.on(signal, () => {
-    child.kill(signal);
+    if (!childClosed) {
+      child.kill(signal);
+    }
   });
 
 handleTerminationSignal('SIGINT');
 handleTerminationSignal('SIGTERM');
+handleTerminationSignal('SIGUSR2');
